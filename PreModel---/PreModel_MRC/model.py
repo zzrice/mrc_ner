@@ -84,22 +84,46 @@ class BertQueryNER(BertPreTrainedModel):
                                     dim=0)  # (batch_size, seq_len, hidden_size[embedding_dim])
         return sequence_output
 
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None,
-                start_positions=None, end_positions=None):
+    @property
+    def word_embeddings(self):
+        """获取word embeddings层，用于SMART对抗训练"""
+        return self.bert.embeddings.word_embeddings
+
+    def forward(self, input_ids=None, token_type_ids=None, attention_mask=None,
+                start_positions=None, end_positions=None, inputs_embeds=None):
         """
         Args:
-            start_positions: (batch x max_len x 1)
+            input_ids: (batch x max_len)
+            token_type_ids: (batch x max_len)
+            attention_mask: (batch x max_len)
+            start_positions: (batch x max_len)
                 [[0, 1, 0, 0, 1, 0, 1, 0, 0, ], [0, 1, 0, 0, 1, 0, 1, 0, 0, ]] 
-            end_positions: (batch x max_len x 1)
-                [[0, 1, 0, 0, 1, 0, 1, 0, 0, ], [0, 1, 0, 0, 1, 0, 1, 0, 0, ]] 
+            end_positions: (batch x max_len)
+                [[0, 1, 0, 0, 1, 0, 1, 0, 0, ], [0, 1, 0, 0, 1, 0, 1, 0, 0, ]]
+            inputs_embeds: 可选，直接输入embeddings，用于SMART对抗训练
         """
+        # 如果提供了inputs_embeds，我们在BertEmbeddings层之后注入扰动
+        if inputs_embeds is not None:
+            # 获取原始embeddings
+            original_embeds = self.bert.embeddings.word_embeddings(input_ids)
+            # 计算扰动
+            delta = inputs_embeds - original_embeds
+            # 将扰动添加到原始embeddings
+            embeddings = original_embeds + delta
+        else:
+            embeddings = None
+
         # pretrain model
         outputs = self.bert(
-            input_ids,
+            input_ids=input_ids,
             attention_mask=attention_mask,
             token_type_ids=token_type_ids,
             output_hidden_states=True
         )  # sequence_output, pooled_output, (hidden_states), (attentions)
+
+        # 如果有扰动的embeddings，替换第一层的输出
+        if embeddings is not None:
+            outputs[0][0] = embeddings
 
         # BERT融合
         sequence_output = self.get_dym_layer(outputs)  # (batch_size, seq_len, hidden_size[embedding_dim])
@@ -118,16 +142,18 @@ class BertQueryNER(BertPreTrainedModel):
             start_loss = loss_fct(start_logits.view(-1, 2), start_positions.view(-1))  # (bs*max_len,)
             end_loss = loss_fct(end_logits.view(-1, 2), end_positions.view(-1))
             # mask
-            start_loss = torch.sum(start_loss * token_type_ids.view(-1)) / batch_size
-            end_loss = torch.sum(end_loss * token_type_ids.view(-1)) / batch_size
+            if token_type_ids is not None:
+                start_loss = torch.sum(start_loss * token_type_ids.view(-1)) / batch_size
+                end_loss = torch.sum(end_loss * token_type_ids.view(-1)) / batch_size
+            else:
+                start_loss = torch.mean(start_loss)
+                end_loss = torch.mean(end_loss)
             # total loss
             total_loss = self.multi_loss_layer.get_loss(torch.cat([start_loss.view(1), end_loss.view(1)]))
             return total_loss
         # inference
         else:
-            start_pre = torch.argmax(F.softmax(start_logits, -1), dim=-1)
-            end_pre = torch.argmax(F.softmax(end_logits, -1), dim=-1)
-            return start_pre, end_pre
+            return start_logits, end_logits
 
 
 if __name__ == '__main__':

@@ -9,6 +9,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 import torch
 from NEZHA.model_NEZHA import NEZHAConfig
 from NEZHA.NEZHA_utils import torch_init_model
+from smart_pytorch import SMARTLoss
+import torch.nn as nn
 
 # 参数解析器
 import random
@@ -43,6 +45,40 @@ def train(model, data_iterator, optimizer, params):
     # 记录平均损失
     loss_avg = utils.RunningAverage()
 
+    # 初始化SMART损失
+    if params.use_smart:
+        # 定义评估函数
+        def eval_fn(embeds):
+            # 获取原始input_ids对应的embeddings
+            original_embeds = model.word_embeddings(input_ids)
+            # 计算扰动
+            delta = embeds - original_embeds
+            # 将扰动添加到原始embeddings
+            perturbed_embeds = original_embeds + delta
+            # 使用原始input_ids进行前向传播，但在内部替换embeddings
+            return model(input_ids=input_ids, token_type_ids=segment_ids,
+                       attention_mask=input_mask)
+        
+        # 定义损失函数
+        def loss_fn(pred, targ):
+            start_logits, end_logits = pred
+            start_positions, end_positions = targ
+            loss_fct = nn.CrossEntropyLoss(reduction='mean')
+            start_loss = loss_fct(start_logits.view(-1, 2), start_positions.view(-1))
+            end_loss = loss_fct(end_logits.view(-1, 2), end_positions.view(-1))
+            total_loss = (start_loss + end_loss) / 2
+            return total_loss
+
+        # 初始化SMART损失函数
+        smart_loss_func = SMARTLoss(
+            eval_fn=eval_fn,
+            loss_fn=loss_fn,
+            num_steps=params.smart_num_steps,
+            step_size=params.smart_step_size,
+            epsilon=params.smart_step_size,
+            noise_var=params.smart_noise_var
+        )
+
     # 使用tqdm显示进度条
     # 一个epoch的训练步数等于dataloader的长度
     t = trange(len(data_iterator), ascii=True)
@@ -52,9 +88,24 @@ def train(model, data_iterator, optimizer, params):
         batch = tuple(t.to(params.device) for t in batch)
         input_ids, input_mask, segment_ids, start_pos, end_pos, _, _, _ = batch
 
-        # 计算损失
-        loss = model(input_ids, token_type_ids=segment_ids, attention_mask=input_mask,
-                     start_positions=start_pos, end_positions=end_pos)
+        # 计算标准损失
+        loss = model(input_ids=input_ids, token_type_ids=segment_ids, 
+                    attention_mask=input_mask,
+                    start_positions=start_pos, end_positions=end_pos)
+
+        if params.use_smart:
+            # 获取初始embeddings
+            embeds = model.word_embeddings(input_ids)
+            
+            # 计算SMART损失
+            smart_loss = smart_loss_func(
+                embeds,
+                model(input_ids=input_ids, token_type_ids=segment_ids,
+                     attention_mask=input_mask),
+                (start_pos, end_pos)
+            )
+            # 合并损失
+            loss = loss + params.smart_loss_weight * smart_loss
 
         if params.n_gpu > 1 and args.multi_gpu:
             loss = loss.mean()  # 在多GPU上取平均值

@@ -72,6 +72,13 @@ class Params:
         self.warmup_prop = 0.1  # warmup比例
         self.gradient_accumulation_steps = 2  # 梯度累积步数
 
+        # SMART对抗训练参数
+        self.use_smart = True  # 是否使用SMART对抗训练
+        self.smart_step_size = 1e-3  # SMART步长
+        self.smart_noise_var = 1e-5  # SMART噪声方差
+        self.smart_num_steps = 1  # SMART对抗步数
+        self.smart_loss_weight = 1.0  # SMART损失权重
+
     def get(self):
         """以字典形式访问Params实例的所有参数
         
