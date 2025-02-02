@@ -9,7 +9,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 import torch
 from NEZHA.model_NEZHA import NEZHAConfig
 from NEZHA.NEZHA_utils import torch_init_model
-from smart_pytorch import SMARTLoss
+from utils import SMARTLoss
 import torch.nn as nn
 
 # 参数解析器

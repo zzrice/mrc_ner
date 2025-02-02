@@ -49,9 +49,9 @@ class Params:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.n_gpu = torch.cuda.device_count()
 
-        self.train_batch_size = 64  # 训练时的batch size
-        self.val_batch_size = 64  # 验证时的batch size
-        self.test_batch_size = 256  # 测试时的batch size
+        self.train_batch_size = 32  # 增加训练batch size
+        self.val_batch_size = 128  # 增加验证batch size
+        self.test_batch_size = 256  # 保持测试batch size不变
 
         # patience策略
         self.patience = 0.1  # 提升阈值
@@ -65,8 +65,8 @@ class Params:
         self.fusion_layers = 4  # 融合层数
         self.dropout = 0.3  # dropout率
         self.weight_decay_rate = 0.1  # 权重衰减率
-        self.fin_tuning_lr = 2e-5  # 微调学习率
-        self.downstream_lr = 1e-4  # 下游任务学习率
+        self.fin_tuning_lr = 3e-5  # 略微提高微调学习率
+        self.downstream_lr = 2e-4  # 略微提高下游任务学习率
         # 梯度截断
         self.clip_grad = 2  # 梯度截断值
         self.warmup_prop = 0.1  # warmup比例
@@ -279,3 +279,72 @@ def initial_parameter(net, initial_method=None):
             n.apply(weights_init)
     else:
         net.apply(weights_init)
+
+
+class SMARTLoss(nn.Module):
+    """SMART Loss的实现
+    
+    参考论文: SMART: Robust and Efficient Fine-Tuning for Pre-trained Natural Language Models through Principled Regularized Optimization
+    """
+    def __init__(self, eval_fn, loss_fn, num_steps=1, step_size=1e-3, epsilon=1e-6, noise_var=1e-5):
+        """初始化SMART Loss
+        
+        Args:
+            eval_fn: 评估函数，接收扰动后的embeddings并返回模型输出
+            loss_fn: 损失函数，计算预测值和目标值之间的损失
+            num_steps: 对抗训练的步数
+            step_size: 对抗扰动的步长
+            epsilon: 用于数值稳定性的小常数
+            noise_var: 初始随机扰动的方差
+        """
+        super(SMARTLoss, self).__init__()
+        self.eval_fn = eval_fn
+        self.loss_fn = loss_fn
+        self.num_steps = num_steps
+        self.step_size = step_size
+        self.epsilon = epsilon
+        self.noise_var = noise_var
+
+    def forward(self, embed, pred, targ):
+        """计算SMART Loss
+        
+        Args:
+            embed: 原始embeddings
+            pred: 原始预测结果
+            targ: 目标值
+            
+        Returns:
+            torch.Tensor: SMART Loss值
+        """
+        # 初始化对抗扰动
+        noise = torch.randn_like(embed) * self.noise_var
+        noise.requires_grad_()
+        
+        # 对抗训练
+        for _ in range(self.num_steps):
+            # 前向传播
+            adv_pred = self.eval_fn(embed + noise)
+            adv_loss = self.loss_fn(adv_pred, targ)
+            
+            # 计算梯度
+            grad = torch.autograd.grad(adv_loss, noise, allow_unused=True)[0]
+            
+            # 如果梯度为None,跳过这次更新
+            if grad is None:
+                continue
+                
+            # 更新扰动
+            norm = torch.norm(grad)
+            if norm != 0 and not torch.isnan(norm):
+                noise.data += self.step_size * grad / (norm + self.epsilon)
+                
+            # 投影到epsilon球内
+            noise_norm = torch.norm(noise)
+            if noise_norm > self.step_size:
+                noise.data = noise.data * self.step_size / noise_norm
+                
+        # 计算最终的对抗损失
+        adv_pred = self.eval_fn(embed + noise.detach())
+        adv_loss = self.loss_fn(adv_pred, targ)
+        
+        return adv_loss

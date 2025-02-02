@@ -1,0 +1,144 @@
+2025-02-02 20:51:41,350:INFO: Model type: 'NEZHA-MRC'
+2025-02-02 20:51:41,350:INFO: device: cuda
+2025-02-02 20:51:41,350:INFO: Init pre-train model...
+2025-02-02 20:51:43,852:INFO: -done
+2025-02-02 20:51:43,852:INFO: Starting training for 30 epoch(s)
+2025-02-02 20:51:47,888:INFO: Epoch 1/30
+2025-02-02 20:54:03,513:INFO: Model type: 'NEZHA-MRC'
+2025-02-02 20:54:03,513:INFO: device: cuda
+2025-02-02 20:54:03,513:INFO: Init pre-train model...
+2025-02-02 20:54:04,856:INFO: -done
+2025-02-02 20:54:04,856:INFO: Starting training for 30 epoch(s)
+2025-02-02 20:54:06,980:INFO: Epoch 1/30
+2025-02-02 20:56:02,671:INFO: Model type: 'NEZHA-MRC'
+2025-02-02 20:56:02,671:INFO: device: cuda
+2025-02-02 20:56:02,671:INFO: Init pre-train model...
+2025-02-02 20:56:04,615:INFO: -done
+2025-02-02 20:56:04,615:INFO: Starting training for 30 epoch(s)
+2025-02-02 20:56:06,817:INFO: Epoch 1/30
+2025-02-02 20:56:55,435:INFO: Model type: 'NEZHA-MRC'
+2025-02-02 20:56:55,436:INFO: device: cuda
+2025-02-02 20:56:55,436:INFO: Init pre-train model...
+2025-02-02 20:56:56,902:INFO: -done
+2025-02-02 20:56:56,903:INFO: Starting training for 30 epoch(s)
+2025-02-02 20:56:59,203:INFO: Epoch 1/30
+2025-02-02 20:59:20,899:INFO: Model type: 'NEZHA-MRC'
+2025-02-02 20:59:20,900:INFO: device: cuda
+2025-02-02 20:59:20,900:INFO: Init pre-train model...
+2025-02-02 20:59:22,991:INFO: -done
+2025-02-02 20:59:22,991:INFO: Starting training for 30 epoch(s)
+2025-02-02 20:59:25,290:INFO: Epoch 1/30
+2025-02-02 21:01:47,932:INFO: Model type: 'NEZHA-MRC'
+2025-02-02 21:01:47,933:INFO: device: cuda
+2025-02-02 21:01:47,933:INFO: Init pre-train model...
+2025-02-02 21:01:49,481:INFO: -done
+2025-02-02 21:01:49,481:INFO: Starting training for 30 epoch(s)
+2025-02-02 21:01:51,565:INFO: Epoch 1/30
+2025-02-02 21:07:26,877:INFO: Model type: 'NEZHA-MRC'
+2025-02-02 21:07:26,877:INFO: device: cuda
+2025-02-02 21:07:26,877:INFO: Init pre-train model...
+2025-02-02 21:07:28,818:INFO: -done
+2025-02-02 21:07:28,818:INFO: Starting training for 30 epoch(s)
+2025-02-02 21:07:31,910:INFO: Epoch 1/30
+2025-02-02 21:13:52,504:INFO: Model type: 'NEZHA-MRC'
+2025-02-02 21:13:52,504:INFO: device: cuda
+2025-02-02 21:13:52,504:INFO: Init pre-train model...
+2025-02-02 21:13:54,841:INFO: -done
+2025-02-02 21:13:54,841:INFO: Starting training for 30 epoch(s)
+2025-02-02 21:13:57,342:INFO: Epoch 1/30
+2025-02-02 21:14:30,559:INFO: Model type: 'NEZHA-MRC'
+2025-02-02 21:14:30,560:INFO: device: cuda
+2025-02-02 21:14:30,560:INFO: Init pre-train model...
+2025-02-02 21:14:32,890:INFO: -done
+2025-02-02 21:14:32,890:INFO: Starting training for 30 epoch(s)
+2025-02-02 21:14:35,247:INFO: Epoch 1/30
+2025-02-02 21:15:07,757:INFO: Model type: 'NEZHA-MRC'
+2025-02-02 21:15:07,757:INFO: device: cuda
+2025-02-02 21:15:07,757:INFO: Init pre-train model...
+2025-02-02 21:15:10,178:INFO: -done
+2025-02-02 21:15:10,178:INFO: Starting training for 30 epoch(s)
+2025-02-02 21:15:12,400:INFO: Epoch 1/30
+2025-02-02 21:15:22,048:INFO: Model type: 'NEZHA-MRC'
+2025-02-02 21:15:22,048:INFO: device: cuda
+2025-02-02 21:15:22,048:INFO: Init pre-train model...
+2025-02-02 21:15:23,423:INFO: -done
+2025-02-02 21:15:23,423:INFO: Starting training for 30 epoch(s)
+2025-02-02 21:15:25,555:INFO: Epoch 1/30
+2025-02-02 21:20:41,953:INFO: Model type: 'NEZHA-MRC'
+2025-02-02 21:20:41,953:INFO: device: cuda
+2025-02-02 21:20:41,953:INFO: Init pre-train model...
+2025-02-02 21:20:43,598:INFO: -done
+2025-02-02 21:20:43,598:INFO: Starting training for 30 epoch(s)
+2025-02-02 21:20:45,690:INFO: Epoch 1/30
+2025-02-02 21:22:32,011:INFO: Model type: 'NEZHA-MRC'
+2025-02-02 21:22:32,011:INFO: device: cuda
+2025-02-02 21:22:32,011:INFO: Init pre-train model...
+2025-02-02 21:22:34,274:INFO: -done
+2025-02-02 21:22:34,275:INFO: Starting training for 30 epoch(s)
+2025-02-02 21:22:36,638:INFO: Epoch 1/30
+2025-02-02 21:32:14,482:INFO: - Val metrics: loss: 08.13; f1: 00.49; acc: 00.01
+2025-02-02 21:32:14,774:INFO:              precision    recall  f1-score   support
+
+      疾病和诊断       0.03      2.00      0.07       451
+       解剖部位       1.28     45.67      2.48       946
+         手术       0.00      0.00      0.00       107
+         药物       0.00      0.00      0.00       225
+      实验室检验       0.02      3.85      0.04       182
+       影像检查       0.00      0.00      0.00        85
+
+avg / total       0.61     22.44      1.19      1996
+
+2025-02-02 21:32:17,444:INFO: - 找到新的最佳F1分数
+2025-02-02 21:32:17,444:INFO: Epoch 2/30
+2025-02-02 21:41:46,052:INFO: - Val metrics: loss: 03.61; f1: 00.49; acc: 00.01
+2025-02-02 21:41:46,353:INFO:              precision    recall  f1-score   support
+
+      疾病和诊断       0.03      2.00      0.07       451
+       解剖部位       1.28     45.67      2.48       946
+         手术       0.00      0.00      0.00       107
+         药物       0.00      0.00      0.00       225
+      实验室检验       0.02      3.85      0.04       182
+       影像检查       0.00      0.00      0.00        85
+
+avg / total       0.61     22.44      1.19      1996
+
+2025-02-02 21:41:48,275:INFO: Epoch 3/30
+2025-02-02 21:51:11,208:INFO: - Val metrics: loss: 01.69; f1: 00.49; acc: 00.01
+2025-02-02 21:51:11,494:INFO:              precision    recall  f1-score   support
+
+      疾病和诊断       0.03      2.00      0.07       451
+       解剖部位       1.28     45.67      2.48       946
+         手术       0.00      0.00      0.00       107
+         药物       0.00      0.00      0.00       225
+      实验室检验       0.02      3.85      0.04       182
+       影像检查       0.00      0.00      0.00        85
+
+avg / total       0.61     22.44      1.19      1996
+
+2025-02-02 21:51:14,047:INFO: Epoch 4/30
+2025-02-02 22:01:22,036:INFO: - Val metrics: loss: 01.32; f1: 00.49; acc: 00.01
+2025-02-02 22:01:22,316:INFO:              precision    recall  f1-score   support
+
+      疾病和诊断       0.03      2.00      0.07       451
+       解剖部位       1.28     45.67      2.48       946
+         手术       0.00      0.00      0.00       107
+         药物       0.00      0.00      0.00       225
+      实验室检验       0.02      3.85      0.04       182
+       影像检查       0.00      0.00      0.00        85
+
+avg / total       0.61     22.44      1.19      1996
+
+2025-02-02 22:01:24,649:INFO: Epoch 5/30
+2025-02-02 22:11:32,525:INFO: - Val metrics: loss: 00.95; f1: 00.49; acc: 00.01
+2025-02-02 22:11:32,795:INFO:              precision    recall  f1-score   support
+
+      疾病和诊断       0.03      2.00      0.07       451
+       解剖部位       1.28     45.67      2.48       946
+         手术       0.00      0.00      0.00       107
+         药物       0.00      0.00      0.00       225
+      实验室检验       0.02      3.85      0.04       182
+       影像检查       0.00      0.00      0.00        85
+
+avg / total       0.61     22.44      1.19      1996
+
+2025-02-02 22:11:34,519:INFO: 最佳验证F1分数: 00.49
