@@ -49,7 +49,7 @@ class Params:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.n_gpu = torch.cuda.device_count()
 
-        self.train_batch_size = 64  # 训练时的batch size
+        self.train_batch_size = 128  # 训练时的batch size
         self.val_batch_size = 64  # 验证时的batch size
         self.test_batch_size = 256  # 测试时的batch size
 

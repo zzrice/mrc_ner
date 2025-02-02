@@ -1,0 +1,20 @@
+{
+    "data_cache": true,
+    "n_gpu": 1,
+    "train_batch_size": 128,
+    "val_batch_size": 64,
+    "test_batch_size": 256,
+    "patience": 0.1,
+    "patience_num": 3,
+    "min_epoch_num": 3,
+    "max_seq_length": 128,
+    "fusion_layers": 4,
+    "dropout": 0.3,
+    "weight_decay_rate": 0.1,
+    "fin_tuning_lr": 2e-05,
+    "downstream_lr": 0.0001,
+    "clip_grad": 2,
+    "warmup_prop": 0.1,
+    "gradient_accumulation_steps": 2,
+    "seed": 2020
+}
