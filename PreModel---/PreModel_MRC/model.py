@@ -1,20 +1,12 @@
 #!/usr/bin/env python3 
 # -*- coding: utf-8 -*-
-"""Downstream task model
-
-Examples:
-    tokenizer = BertTokenizer(vocab_file=os.path.join(params.bert_model_dir, 'vocab.txt'), do_lower_case=True)
-    config = BertConfig.from_json_file(os.path.join(params.bert_model_dir, 'bert_config.json'))
-    model = BertModel.from_pretrained(config=config, pretrained_model_name_or_path=model_path)
-"""
+"""Downstream task model for DeBERTa MRC NER"""
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from NEZHA.model_NEZHA import BertPreTrainedModel, NEZHAModel
+from transformers import DebertaModel, DebertaPreTrainedModel
 from utils import initial_parameter
-
 
 class MultiLossLayer(nn.Module):
     """implementation of "Multi-Task Learning Using Uncertainty
@@ -26,31 +18,35 @@ class MultiLossLayer(nn.Module):
             num_loss (int): number of multi-task loss
         """
         super(MultiLossLayer, self).__init__()
-        # sigmas^2 (num_loss,)
-        # uniform init
-        self.sigmas_sq = nn.Parameter(nn.init.uniform_(torch.empty(num_loss), a=0.2, b=1.0), requires_grad=True)
+        # 使用更保守的初始化范围，并添加值域限制
+        self.log_sigmas = nn.Parameter(torch.zeros(num_loss).clamp(-1, 1), requires_grad=True)
 
     def get_loss(self, loss_set):
         """
         Args:
             loss_set (Tensor): multi-task loss (num_loss,)
         """
-        # 1/2σ^2
-        factor = torch.div(1.0, torch.mul(2.0, self.sigmas_sq))  # (num_loss,)
-        # loss part
-        loss_part = torch.sum(torch.mul(factor, loss_set))  # (num_loss,)
-        # regular part
-        regular_part = torch.sum(torch.log(self.sigmas_sq))
-        loss = loss_part + regular_part
+        # 添加值域限制
+        clamped_log_sigmas = torch.clamp(self.log_sigmas, -1, 1)
+        # 通过exp确保sigma为正值，并且增长受控
+        sigmas_sq = torch.exp(2 * clamped_log_sigmas)
+        
+        # 确保 loss_set 非负
+        loss_set = torch.abs(loss_set)
+        
+        # 添加正则化项
+        reg_term = 0.1 * torch.mean(sigmas_sq)
+        
+        # loss part with regularization
+        loss = torch.sum(loss_set / (2 * sigmas_sq) + clamped_log_sigmas) + reg_term
         return loss
 
 
-class BertQueryNER(BertPreTrainedModel):
+class DeBertaQueryNER(DebertaPreTrainedModel):
     def __init__(self, config, params):
-        super(BertQueryNER, self).__init__(config)
-        # pretrain model layer
-        self.bert = NEZHAModel(config)
-
+        super().__init__(config)
+        self.deberta = DebertaModel(config)
+        
         # start and end position layer
         self.start_outputs = nn.Linear(config.hidden_size, 2)
         self.end_outputs = nn.Linear(config.hidden_size, 2)
@@ -64,7 +60,7 @@ class BertQueryNER(BertPreTrainedModel):
         self.multi_loss_layer = MultiLossLayer(num_loss=2)
 
         # init weights
-        self.apply(self.init_bert_weights)
+        self.init_weights()
         self.init_param()
 
     def init_param(self):
@@ -73,13 +69,9 @@ class BertQueryNER(BertPreTrainedModel):
         nn.init.xavier_normal_(self.dym_weight)
 
     def get_dym_layer(self, outputs):
-        """
-        获取动态权重融合后的bert output(num_layer维度)
-        :param outputs: origin bert output
-        :return sequence_output: 融合后的bert encoder output. (batch_size, seq_len, hidden_size[embedding_dim])
-        """
-        hidden_stack = torch.stack(outputs[0][-self.fusion_layers:],
-                                   dim=0)  # (bert_layer, batch_size, sequence_length, hidden_size)
+        """获取动态权重融合后的deberta output"""
+        hidden_stack = torch.stack(outputs.hidden_states[-self.fusion_layers:],
+                                   dim=0)  # (deberta_layer, batch_size, sequence_length, hidden_size)
         sequence_output = torch.sum(hidden_stack * self.dym_weight,
                                     dim=0)  # (batch_size, seq_len, hidden_size[embedding_dim])
         return sequence_output
@@ -93,37 +85,39 @@ class BertQueryNER(BertPreTrainedModel):
             end_positions: (batch x max_len x 1)
                 [[0, 1, 0, 0, 1, 0, 1, 0, 0, ], [0, 1, 0, 0, 1, 0, 1, 0, 0, ]] 
         """
-        # pretrain model
-        outputs = self.bert(
+        outputs = self.deberta(
             input_ids,
             attention_mask=attention_mask,
             token_type_ids=token_type_ids,
             output_hidden_states=True
-        )  # sequence_output, pooled_output, (hidden_states), (attentions)
+        )
 
-        # BERT融合
-        sequence_output = self.get_dym_layer(outputs)  # (batch_size, seq_len, hidden_size[embedding_dim])
-
-        # sequence_output = outputs[0]  # batch x seq_len x hidden
+        sequence_output = self.get_dym_layer(outputs)
         batch_size, seq_len, hid_size = sequence_output.size()
 
-        # get logits
-        start_logits = self.start_outputs(sequence_output)  # batch x seq_len x 2
-        end_logits = self.end_outputs(sequence_output)  # batch x seq_len x 2
+        start_logits = self.start_outputs(sequence_output)
+        end_logits = self.end_outputs(sequence_output)
 
-        # train
         if start_positions is not None and end_positions is not None:
-            # s & e loss
             loss_fct = nn.CrossEntropyLoss(reduction='none')
-            start_loss = loss_fct(start_logits.view(-1, 2), start_positions.view(-1))  # (bs*max_len,)
+            start_loss = loss_fct(start_logits.view(-1, 2), start_positions.view(-1))
             end_loss = loss_fct(end_logits.view(-1, 2), end_positions.view(-1))
-            # mask
+            
             start_loss = torch.sum(start_loss * token_type_ids.view(-1)) / batch_size
             end_loss = torch.sum(end_loss * token_type_ids.view(-1)) / batch_size
-            # total loss
+            
+            # 确保基础损失非负
+            start_loss = torch.abs(start_loss)
+            end_loss = torch.abs(end_loss)
+            
             total_loss = self.multi_loss_layer.get_loss(torch.cat([start_loss.view(1), end_loss.view(1)]))
+            
+            # 添加损失值检查
+            if torch.isnan(total_loss) or torch.isinf(total_loss):
+                print(f"警告：损失值异常 - start_loss: {start_loss}, end_loss: {end_loss}")
+                total_loss = torch.tensor(1.0, device=total_loss.device, requires_grad=True)
+            
             return total_loss
-        # inference
         else:
             start_pre = torch.argmax(F.softmax(start_logits, -1), dim=-1)
             end_pre = torch.argmax(F.softmax(end_logits, -1), dim=-1)
@@ -131,14 +125,14 @@ class BertQueryNER(BertPreTrainedModel):
 
 
 if __name__ == '__main__':
-    from transformers import BertConfig
+    from transformers import DebertaConfig
     import utils
     import os
 
     params = utils.Params()
     # Prepare model
-    bert_config = BertConfig.from_json_file(os.path.join(params.bert_model_dir, 'bert_config.json'))
-    model = BertQueryNER.from_pretrained(config=bert_config, pretrained_model_name_or_path=params.bert_model_dir,
+    deberta_config = DebertaConfig.from_json_file(os.path.join(params.bert_model_dir, 'bert_config.json'))
+    model = DeBertaQueryNER.from_pretrained(config=deberta_config, pretrained_model_name_or_path=params.bert_model_dir,
                                          params=params)
     # 保存bert config
     model.to(params.device)

@@ -24,7 +24,7 @@ EN2QUERY = {
     '疾病和诊断': '从文本中提取所有疾病和诊断名称，包括但不限于癌症、肺炎、糖尿病、高血压、肝硬化等具体病症，排除症状描述（如"头痛"）和非专业术语',
     '影像检查': '识别医学影像检查项目，需为标准化缩写或全称，例如CT、MRI、X射线、超声检查、血管造影，注意区分非影像类检查（如"血常规"）',
     '实验室检验': '找出实验室检测指标名称，如白细胞计数、血红蛋白、血糖、pH值、C反应蛋白等，需明确是检测项目而非检测结果（如"偏高"不是实体）',
-    '手术': '提取手术操作名称，包括根治术、切除术（如肺叶切除）、穿刺活检、移植术等，需完整形式（如"腹腔镜胆囊切除术"），排除非手术操作（如"检查"）',
+    '手术': '提取手术操作名称，包括根治术、切除术（如肺叶切除）、穿刺活检、移植术等，需完整形式（如"腹腔镜胆囊切除术"）',
     '药物': '识别药物全称或通用名，包括化学名（如"阿司匹林"）、剂型（如"胶囊"、"注射液"）、商品名（如"拜新同"），排除非药物成分（如"维生素C"指成分时）',
     '解剖部位': '定位解剖学标准部位，如胃、肝脏、胸椎、冠状动脉、神经元等，需精确到亚结构（如"右肺上叶"），排除非解剖术语（如"腹部不适"中的"腹部"）'
 }
@@ -35,13 +35,13 @@ class Params:
     def __init__(self, ex_index=1):
         """
         Args:
-            ex_index (int): 实验名称索引  # 实验名称索引
+            ex_index (int): 实验名称索引
         """
         # 根路径
         self.root_path = Path(os.path.abspath(os.path.dirname(__file__)))
         self.data_dir = self.root_path / 'data'
         self.params_path = self.root_path / f'experiments/ex{ex_index}'
-        self.bert_model_dir = self.root_path.parent.parent / 'nezha-large'
+        self.bert_model_dir = self.root_path.parent.parent / 'Deberta-Chinese-Large'
         self.model_dir = self.root_path / f'model/ex{ex_index}'
 
         # 读取保存的data
@@ -49,9 +49,9 @@ class Params:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.n_gpu = torch.cuda.device_count()
 
-        self.train_batch_size = 64  # 训练时的batch size
-        self.val_batch_size = 64  # 验证时的batch size
-        self.test_batch_size = 256  # 测试时的batch size
+        self.train_batch_size = 32  # 训练时的batch size
+        self.val_batch_size = 32  # 验证时的batch size
+        self.test_batch_size = 128  # 测试时的batch size
 
         # patience策略
         self.patience = 0.1  # 提升阈值
@@ -63,12 +63,11 @@ class Params:
         self.max_seq_length = 128  # 最大序列长度
 
         self.fusion_layers = 4  # 融合层数
-        self.dropout = 0.3  # dropout率
-        self.weight_decay_rate = 0.1  # 权重衰减率
-        self.fin_tuning_lr = 2e-5  # 微调学习率
-        self.downstream_lr = 1e-4  # 下游任务学习率
+        self.dropout = 0.1  # dropout率
+        self.weight_decay_rate = 0.01  # 权重衰减率
+        self.learning_rate = 2e-5  # 学习率
         # 梯度截断
-        self.clip_grad = 2  # 梯度截断值
+        self.clip_grad = 1.0  # 梯度截断值
         self.warmup_prop = 0.1  # warmup比例
         self.gradient_accumulation_steps = 2  # 梯度累积步数
 
@@ -159,25 +158,33 @@ def save_checkpoint(state, is_best, checkpoint):
         shutil.copyfile(filepath, os.path.join(checkpoint, 'best.pth.tar'))
 
 
-def load_checkpoint(checkpoint, optimizer=True):
+def load_checkpoint(checkpoint, model=None, optimizer=None, scheduler=None):
     """从指定路径加载模型
-    
-    如果optimizer为True，同时加载优化器状态
     
     参数:
         checkpoint (str): 要加载的checkpoint文件路径
-        optimizer (bool): 是否加载优化器状态
+        model: 要加载权重的模型
+        optimizer: 要加载状态的优化器
+        scheduler: 要加载状态的学习率调度器
         
     返回:
-        tuple: (模型, 优化器) 或仅返回模型
+        model: 加载了权重的模型
     """
     if not os.path.exists(checkpoint):
         raise ValueError("文件不存在: {}".format(checkpoint))
-    checkpoint = torch.load(checkpoint, map_location=torch.device('cpu'))
-
-    if optimizer:
-        return checkpoint['model'], checkpoint['optim']
-    return checkpoint['model']
+    
+    state_dict = torch.load(checkpoint, map_location=torch.device('cpu'))
+    
+    if model is not None:
+        model.load_state_dict(state_dict['model'].state_dict())
+    
+    if optimizer is not None and 'optim' in state_dict:
+        optimizer.load_state_dict(state_dict['optim'].state_dict())
+    
+    if scheduler is not None and 'scheduler' in state_dict:
+        scheduler.load_state_dict(state_dict['scheduler'].state_dict())
+    
+    return model
 
 
 def set_logger(save, log_path=None):
