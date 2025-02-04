@@ -16,39 +16,51 @@ import numpy as np
 
 
 def get_entities(seq, suffix=False):
-    """Gets entities from sequence.
+    """从标签序列中提取实体信息
+
+    该方法用于从BIO/BIOES等序列标注格式中提取实体信息，返回实体的类型及其在序列中的起止位置。
 
     Args:
-        seq (list): sequence of labels.
+        seq (list): 标签序列，可以是嵌套列表
+        suffix (bool): 是否使用后缀模式。默认为False，表示使用前缀模式（如B-、I-等）
 
     Returns:
-        list: list of (chunk_type, chunk_start, chunk_end).
+        list: 包含实体信息的列表，每个元素为三元组 (实体类型, 起始位置, 结束位置)
 
     Example:
         >>> seq = ['B-PER', 'I-PER', 'O', 'B-LOC']
         >>> get_entities(seq)
         [('PER', 0, 1), ('LOC', 3, 3)]
     """
-    # for nested list
+    # 处理嵌套列表的情况，将其展平为一维列表
     if any(isinstance(s, list) for s in seq):
         seq = [item for sublist in seq for item in sublist + ['O']]
 
-    prev_tag = 'O'
-    prev_type = ''
-    begin_offset = 0
-    chunks = []
-    for i, chunk in enumerate(seq + ['O']):
-        if suffix:
-            tag = chunk[-1]
-            type_ = chunk.split('-')[0]
-        else:
-            tag = chunk[0]
-            type_ = chunk.split('-')[-1]
+    # 初始化变量
+    prev_tag = 'O'  # 前一个标签
+    prev_type = ''  # 前一个实体类型
+    begin_offset = 0  # 实体起始位置
+    chunks = []  # 存储提取的实体信息
 
+    # 遍历序列，注意在末尾添加'O'作为哨兵值
+    for i, chunk in enumerate(seq + ['O']):
+        # 根据suffix参数决定如何解析标签
+        if suffix:
+            tag = chunk[-1]  # 使用后缀模式，取最后一个字符作为标签
+            type_ = chunk.split('-')[0]  # 实体类型在'-'之前
+        else:
+            tag = chunk[0]  # 使用前缀模式，取第一个字符作为标签
+            type_ = chunk.split('-')[-1]  # 实体类型在'-'之后
+
+        # 判断是否到达实体结尾
         if end_of_chunk(prev_tag, tag, prev_type, type_):
-            chunks.append((prev_type, begin_offset, i - 1))
+            chunks.append((prev_type, begin_offset, i - 1))  # 保存当前实体信息
+        
+        # 判断是否开始新实体
         if start_of_chunk(prev_tag, tag, prev_type, type_):
-            begin_offset = i
+            begin_offset = i  # 更新实体起始位置
+
+        # 更新前一个标签和实体类型
         prev_tag = tag
         prev_type = type_
 
@@ -185,15 +197,19 @@ def accuracy_score(y_true, y_pred):
 
 
 def classification_report(y_true, y_pred, digits=2, suffix=False):
-    """Build a text report showing the main classification metrics.
+    """生成分类评估报告，展示主要分类指标
+    
+    该函数用于生成一个文本报告，展示每个类别的精确率(precision)、召回率(recall)和F1分数，
+    以及整体的加权平均值。
 
     Args:
-        y_true : 2d array. Ground truth (correct) target values.
-        y_pred : 2d array. Estimated targets as returned by a classifier.
-        digits : int. Number of digits for formatting output floating point values.
+        y_true : 2d array. 真实标签值，正确的目标值
+        y_pred : 2d array. 预测标签值，由分类器返回的预测结果
+        digits : int. 输出浮点数的精度位数，默认为2
+        suffix : bool. 是否使用后缀模式，默认为False
 
     Returns:
-        report : string. Text summary of the precision, recall, F1 score for each class.
+        report : string. 包含每个类别的精确率、召回率、F1分数和支持数的文本摘要
 
     Examples:
         >>> y_true = [['O', 'O', 'O', 'B-MISC', 'I-MISC', 'I-MISC', 'O'], ['B-PER', 'I-PER', 'O']]
@@ -207,41 +223,56 @@ def classification_report(y_true, y_pred, digits=2, suffix=False):
         avg / total       0.50      0.50      0.50         2
         <BLANKLINE>
     """
+    # 获取真实和预测的实体集合
     true_entities = set(get_entities(y_true, suffix))
     pred_entities = set(get_entities(y_pred, suffix))
 
-    name_width = 0
-    d1 = defaultdict(set)
-    d2 = defaultdict(set)
+    # 初始化变量
+    name_width = 0  # 用于存储最长的类别名称长度
+    d1 = defaultdict(set)  # 存储真实实体的字典
+    d2 = defaultdict(set)  # 存储预测实体的字典
+
+    # 处理真实实体
     for e in true_entities:
-        d1[e[0]].add((e[1], e[2]))
-        name_width = max(name_width, len(e[0]))
+        d1[e[0]].add((e[1], e[2]))  # 按类别分组存储实体
+        name_width = max(name_width, len(e[0]))  # 更新最大类别名称长度
+
+    # 处理预测实体
     for e in pred_entities:
-        d2[e[0]].add((e[1], e[2]))
+        d2[e[0]].add((e[1], e[2]))  # 按类别分组存储实体
 
-    last_line_heading = 'avg / total'
-    width = max(name_width, len(last_line_heading), digits)
+    # 设置报告格式
+    last_line_heading = 'avg / total'  # 最后一行标题
+    width = max(name_width, len(last_line_heading), digits)  # 计算列宽
 
+    # 设置表头
     headers = ["precision", "recall", "f1-score", "support"]
     head_fmt = u'{:>{width}s} ' + u' {:>9}' * len(headers)
     report = head_fmt.format(u'', *headers, width=width)
     report += u'\n\n'
 
+    # 设置行格式
     row_fmt = u'{:>{width}s} ' + u' {:>9.{digits}f}' * 3 + u' {:>9}\n'
 
+    # 初始化统计列表
     ps, rs, f1s, s = [], [], [], []
+
+    # 计算每个类别的指标
     for type_name, true_entities in d1.items():
         pred_entities = d2[type_name]
-        nb_correct = len(true_entities & pred_entities)
-        nb_pred = len(pred_entities)
-        nb_true = len(true_entities)
+        nb_correct = len(true_entities & pred_entities)  # 正确预测的实体数
+        nb_pred = len(pred_entities)  # 预测的实体数
+        nb_true = len(true_entities)  # 真实的实体数
 
+        # 计算精确率、召回率和F1分数
         p = 100 * nb_correct / nb_pred if nb_pred > 0 else 0
         r = 100 * nb_correct / nb_true if nb_true > 0 else 0
         f1 = 2 * p * r / (p + r) if p + r > 0 else 0
 
+        # 将结果添加到报告中
         report += row_fmt.format(*[type_name, p, r, f1, nb_true], width=width, digits=digits)
 
+        # 保存统计结果
         ps.append(p)
         rs.append(r)
         f1s.append(f1)
@@ -249,12 +280,12 @@ def classification_report(y_true, y_pred, digits=2, suffix=False):
 
     report += u'\n'
 
-    # compute averages
+    # 计算加权平均值
     report += row_fmt.format(last_line_heading,
-                             np.average(ps, weights=s),
-                             np.average(rs, weights=s),
-                             np.average(f1s, weights=s),
-                             np.sum(s),
+                             np.average(ps, weights=s),  # 加权平均精确率
+                             np.average(rs, weights=s),  # 加权平均召回率
+                             np.average(f1s, weights=s),  # 加权平均F1分数
+                             np.sum(s),  # 总支持数
                              width=width, digits=digits)
 
     return report

@@ -47,74 +47,97 @@ def pointer2bio(start_labels, end_labels, en_cate):
 
 
 def evaluate(args, model, eval_dataloader, params):
+    """模型评估函数
+    
+    该函数用于在验证集或测试集上评估模型性能，计算损失、F1分数和准确率等指标
+    
+    Args:
+        args: 命令行参数
+        model: 待评估的模型
+        eval_dataloader: 评估数据加载器
+        params: 模型参数配置
+        
+    Returns:
+        metrics: 包含评估指标的字典
+    """
+    # 将模型设置为评估模式
     model.eval()
-    # 记录平均损失
+    
+    # 初始化运行平均损失计算器
     loss_avg = utils.RunningAverage()
-    # init
-    pre_result = []
-    gold_result = []
+    
+    # 初始化预测结果和真实结果列表
+    pre_result = []  # 存储模型预测的BIO标签
+    gold_result = []  # 存储真实的BIO标签
 
-    # get data
+    # 遍历评估数据集
     for batch in tqdm(eval_dataloader, unit='Batch', ascii=True):
-        # to device
+        # 将数据移动到指定设备（如GPU）
         batch = tuple(t.to(params.device) for t in batch)
+        # 解包batch数据
         input_ids, input_mask, segment_ids, start_pos, end_pos, en_cate, _, _ = batch
 
+        # 禁用梯度计算
         with torch.no_grad():
-            # get loss
+            # 计算模型损失
             loss = model(input_ids, token_type_ids=segment_ids, attention_mask=input_mask,
                          start_positions=start_pos, end_positions=end_pos)
+            # 如果使用多GPU，对损失取平均
             if params.n_gpu > 1 and args.multi_gpu:
-                loss = loss.mean()  # mean() to average on multi-gpu.
-            # update the average loss
+                loss = loss.mean()
+            # 更新运行平均损失
             loss_avg.update(loss.item())
 
-            # inference
+            # 模型推理，获取预测的start和end位置
             start_pre, end_pre = model(input_ids=input_ids,
                                        token_type_ids=segment_ids, attention_mask=input_mask)
 
-        # gold label
+        # 将真实标签转移到CPU并转换为列表
         start_pos = start_pos.to("cpu").numpy().tolist()
         end_pos = end_pos.to("cpu").numpy().tolist()
-
         input_mask = input_mask.to('cpu').numpy().tolist()
         en_cate = en_cate.to("cpu").numpy().tolist()
 
-        # predict label
+        # 将预测结果转移到CPU并转换为列表
         start_pre = start_pre.detach().cpu().numpy().tolist()
         end_pre = end_pre.detach().cpu().numpy().tolist()
 
-        # idx to label
+        # 创建类别索引到标签的映射
         cate_idx2label = {idx: value for idx, value in enumerate(params.tag_list)}
 
-        # get bio result
+        # 处理每个样本的预测和真实标签
         for start_p, end_p, start_g, end_g, input_mask_s, en_cate_s in zip(start_pre, end_pre,
                                                                            start_pos, end_pos,
                                                                            input_mask, en_cate):
+            # 获取当前样本的类别字符串
             en_cate_str = cate_idx2label[en_cate_s]
-            # 问题长度
+            # 计算问题长度
             q_len = len(EN2QUERY[en_cate_str])
-            # 有效长度
+            # 计算有效文本长度
             act_len = sum(input_mask_s[q_len + 2:-1])
-            # 转换为BIO标注
+            # 将预测的start和end位置转换为BIO标签
             pre_bio_labels = pointer2bio(start_p[q_len + 2:q_len + 2 + act_len],
                                          end_p[q_len + 2:q_len + 2 + act_len],
                                          en_cate=en_cate_str)
+            # 将真实的start和end位置转换为BIO标签
             gold_bio_labels = pointer2bio(start_g[q_len + 2:q_len + 2 + act_len],
                                           end_g[q_len + 2:q_len + 2 + act_len],
                                           en_cate=en_cate_str)
+            # 保存结果
             pre_result.append(pre_bio_labels)
             gold_result.append(gold_bio_labels)
 
-    # metrics
-    f1 = f1_score(y_true=gold_result, y_pred=pre_result)
-    acc = accuracy_score(y_true=gold_result, y_pred=pre_result)
+    # 计算评估指标
+    f1 = f1_score(y_true=gold_result, y_pred=pre_result)  # 计算F1分数
+    acc = accuracy_score(y_true=gold_result, y_pred=pre_result)  # 计算准确率
 
-    # f1, acc
+    # 组织评估结果
     metrics = {'loss': loss_avg(), 'f1': f1, 'acc': acc}
+    # 格式化评估指标字符串
     metrics_str = "; ".join("{}: {:05.2f}".format(k, v) for k, v in metrics.items())
+    # 记录评估结果
     logging.info("- {} metrics: ".format('Val') + metrics_str)
-    # f1 classification report
+    # 生成分类报告
     report = classification_report(y_true=gold_result, y_pred=pre_result)
     logging.info(report)
 
