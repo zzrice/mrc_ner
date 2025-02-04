@@ -3,6 +3,9 @@
 """dataloader.py utils"""
 import re
 import json
+import logging
+import random
+import torch
 
 
 def split_text(text, max_len, split_pat=r'([，。]”?)', greedy=False):
@@ -196,150 +199,204 @@ def read_examples(input_file):
     return examples
 
 
-def convert_examples_to_features(params, examples, tokenizer, data_sign, pad_sign=True, greed_split=True):
-    """convert InputExamples to features.
-    :param examples (List[InputExamples])
-    :param pad_sign: 是否补零
-    :return: features (List[InputFeatures])
+def augment_data(text, query, start_pos, end_pos, max_length, augment_ratio=0.5, window_stride=0.8):
+    """数据增强方法
+    
+    Args:
+        text: 原始文本
+        query: 查询文本
+        start_pos: 起始位置
+        end_pos: 结束位置
+        max_length: 最大序列长度
+        augment_ratio: 数据增强比例，控制增强样本数量
+        window_stride: 滑动窗口的步长比例
+    
+    Returns:
+        list: 增强后的数据列表，每个元素为(text, query, start_pos, end_pos)
     """
-    # tag to id
-    tag2idx = {tag: idx for idx, tag in enumerate(params.tag_list)}
+    augmented_data = []
+    
+    # 1. 滑动窗口策略
+    window_size = max_length - len(query) - 3  # 预留[CLS], [SEP], [SEP]的位置
+    stride = int(window_size * window_stride)  # 使用window_stride控制步长
+    
+    for i in range(0, len(text), stride):
+        window_text = text[i:i + window_size]
+        if len(window_text) < window_size // 2:  # 窗口太小则跳过
+            continue
+        
+        # 调整答案位置
+        new_start = start_pos - i
+        new_end = end_pos - i
+        
+        # 检查答案是否在当前窗口内
+        if 0 <= new_start < len(window_text) and 0 <= new_end < len(window_text):
+            # 使用augment_ratio控制是否添加这个增强样本
+            if random.random() < augment_ratio:
+                augmented_data.append((window_text, query, new_start, new_end))
+    
+    # 2. 动态最大长度策略
+    if len(text) > max_length:
+        # 确保答案在文本中间
+        answer_center = (start_pos + end_pos) // 2
+        half_length = (max_length - len(query) - 3) // 2
+        
+        text_start = max(0, answer_center - half_length)
+        text_end = min(len(text), answer_center + half_length)
+        
+        # 如果答案在文本开头或结尾附近，调整窗口位置
+        if text_start == 0:
+            text_end = min(len(text), max_length - len(query) - 3)
+        elif text_end == len(text):
+            text_start = max(0, len(text) - (max_length - len(query) - 3))
+        
+        window_text = text[text_start:text_end]
+        new_start = start_pos - text_start
+        new_end = end_pos - text_start
+        
+        if 0 <= new_start < len(window_text) and 0 <= new_end < len(window_text):
+            # 使用augment_ratio控制是否添加这个增强样本
+            if random.random() < augment_ratio:
+                augmented_data.append((window_text, query, new_start, new_end))
+    
+    return augmented_data
+
+
+def convert_examples_to_features(params, examples, tokenizer, greed_split=False, data_sign='train'):
+    """将InputExamples转换为InputFeatures
+    """
     features = []
-
-    max_len = params.max_seq_length
-    # 分割符
-    split_pad = r'([,.!?，。！？]”?)'
-    for (example_idx, example) in enumerate(examples):
-        # max doc length
-        max_tokens_for_doc = max_len - len(example.query_item) - 3
-        # 原始文本index
-        original_id = list(range(len(example.context_item)))
-
-        if (len(example.start_position) != 0 and len(example.end_position) != 0) or data_sign != 'train':
-            # split long text
-            sub_contexts, starts = split_text(text=example.context_item, max_len=max_tokens_for_doc,
-                                              greedy=greed_split, split_pat=split_pad)
-        # 如果训练集标签为空，则不分割
+    total_original_samples = len(examples)
+    total_augmented_samples = 0
+    augmented_stats = {
+        'window_augmented': 0,
+        'dynamic_length_augmented': 0
+    }
+    
+    logging.info(f"开始处理{data_sign}数据集，原始样本数量: {total_original_samples}")
+    
+    for (example_index, example) in enumerate(examples):
+        query_tokens = tokenizer.tokenize(example.query_item)
+        
+        # 对于训练数据，使用数据增强
+        if data_sign == 'train':
+            augmented_samples = augment_data(
+                example.context_item,
+                example.query_item,
+                example.start_position,
+                example.end_position,
+                params.max_seq_length,
+                params.augment_ratio,
+                params.window_stride
+            )
+            
+            # 记录增强样本数量
+            if len(augmented_samples) > 0:
+                total_augmented_samples += len(augmented_samples)
+                
+                # 记录每种增强方法的统计信息
+                for aug_text, _, _, _ in augmented_samples:
+                    if len(aug_text) < len(example.context_item):
+                        augmented_stats['window_augmented'] += 1
+                    else:
+                        augmented_stats['dynamic_length_augmented'] += 1
+            
+            # 每处理100个样本输出一次日志
+            if (example_index + 1) % 100 == 0:
+                logging.info(f"已处理 {example_index + 1}/{total_original_samples} 个原始样本")
+                logging.info(f"当前增强样本数量: {total_augmented_samples}")
+                logging.info(f"滑动窗口增强: {augmented_stats['window_augmented']}")
+                logging.info(f"动态长度增强: {augmented_stats['dynamic_length_augmented']}")
+                logging.info(f"当前内存使用: {torch.cuda.memory_allocated() / 1024**3:.2f}GB")
+            
+            # 合并原始样本和增强样本
+            all_samples = [(example.context_item, example.query_item, example.start_position, example.end_position)] + augmented_samples
         else:
-            sub_contexts, starts = [example.context_item], [0]
-
-        for context, start in zip(sub_contexts, starts):
-            # 保存子文本对应原文本的位置
-            split_to_original_id = original_id[start:start + len(context)]
-            # tokenize query
-            query_tokens = tokenizer.tokenize(example.query_item)
-            # List[str]
-            context_doc = whitespace_tokenize(context)
-            # sanity check
-            assert len(context_doc) == len(context) == len(split_to_original_id), 'check the whitespace tokenize!'
-
-            # init
-            doc_start_pos = [0] * len(context_doc)
-            doc_end_pos = [0] * len(context_doc)
-
-            # 获取文本tokens
-            # 标签不为空的样本
-            if len(example.start_position) != 0 and len(example.end_position) != 0:
-                has_label = False
-                # get gold label
-                for start_item, end_item in zip(example.start_position, example.end_position):
-                    # 属于该子文本的标签
-                    if 0 <= (start_item - start) < len(context_doc) and 0 <= (end_item - start) < len(context_doc):
-                        doc_start_pos[start_item - start] = 1
-                        doc_end_pos[end_item - start] = 1
-                        has_label = True
-                # 如果分割后的文本没有标签，则舍弃
-                if not has_label:
-                    continue
-
-            # get context_tokens
-            context_doc_tokens = []
-            for token in context_doc:
-                # tokenize
-                tmp_subword_lst = tokenizer.tokenize(token)
-                if len(tmp_subword_lst) == 1:
-                    context_doc_tokens.extend(tmp_subword_lst)  # context len
-                else:
-                    context_doc_tokens.extend(['[UNK]'])
-
-            # cut off
-            if len(context_doc_tokens) > max_tokens_for_doc:
-                context_doc_tokens = context_doc_tokens[: max_tokens_for_doc]
-                doc_start_pos = doc_start_pos[: max_tokens_for_doc]
-                doc_end_pos = doc_end_pos[: max_tokens_for_doc]
-                split_to_original_id = split_to_original_id[: max_tokens_for_doc]
-
-            # sanity check
-            assert len(context_doc_tokens) == len(doc_start_pos) == len(doc_end_pos) == len(split_to_original_id)
-
-            # input_mask:
-            #   the mask has 1 for real tokens and 0 for padding tokens.
-            #   only real tokens are attended to.
-            # segment_ids:
-            #   segment token indices to indicate first and second portions of the inputs.
-            input_tokens, segment_ids, input_mask, start_pos, end_pos, s_to_o = [], [], [], [], [], []
-
-            input_tokens.append("[CLS]")
-            for ll in (segment_ids, start_pos, end_pos):
-                ll.append(0)
-            input_mask.append(1)
-            s_to_o.append(-1)
-
-            # query
-            input_tokens.extend(query_tokens)
-            for ll in (segment_ids, start_pos, end_pos):
-                ll.extend([0] * len(query_tokens))
-            input_mask.extend([1] * len(query_tokens))
-            s_to_o.extend([-1] * len(query_tokens))
-
-            # sep
-            input_tokens.append("[SEP]")
-            for ll in (segment_ids, start_pos, end_pos):
-                ll.append(0)
-            input_mask.append(1)
-            s_to_o.append(-1)
-
-            # context
-            input_tokens.extend(context_doc_tokens)
-            segment_ids.extend([1] * len(context_doc_tokens))
-            start_pos.extend(doc_start_pos)
-            end_pos.extend(doc_end_pos)
-            input_mask.extend([1] * len(context_doc_tokens))
-            s_to_o.extend(split_to_original_id)
-
-            # sep
-            input_tokens.append("[SEP]")
-            segment_ids.append(1)
-            start_pos.append(0)
-            end_pos.append(0)
-            input_mask.append(1)
-            s_to_o.append(-1)
-
-            # token to id
-            input_ids = tokenizer.convert_tokens_to_ids(input_tokens)
-
-            # zero-padding up to the sequence length
-            if len(input_ids) < params.max_seq_length and pad_sign:
-                # pad
-                padding = [0] * (params.max_seq_length - len(input_ids))
-                # pad_token_id==0
-                input_ids += padding
-                input_mask += padding
-                segment_ids += padding
-                start_pos += padding
-                end_pos += padding
-                s_to_o.extend([-1] * len(padding))
-
-            features.append(
-                InputFeatures(
-                    input_ids=input_ids,
-                    input_mask=input_mask,
-                    segment_ids=segment_ids,
-                    start_position=start_pos,
-                    end_position=end_pos,
-                    en_cate=tag2idx[example.en_cate],
-                    split_to_original_id=s_to_o,
-                    example_id=example_idx
-                ))
-
+            # 验证和测试数据不做增强
+            all_samples = [(example.context_item, example.query_item, example.start_position, example.end_position)]
+            
+        # 处理所有样本（原始+增强）
+        for text, query, start_position, end_position in all_samples:
+            # 转换为特征
+            feature = convert_single_example_to_feature(
+                params,
+                tokenizer.tokenize(query),
+                tokenizer.tokenize(text),
+                start_position,
+                end_position,
+                tokenizer,
+                example_index,
+                0  # 由于已经在augment_data中处理了切分，这里使用0
+            )
+            if feature is not None:
+                features.append(feature)
+    
+    # 输出最终统计信息
+    if data_sign == 'train':
+        logging.info("="*50)
+        logging.info("数据增强统计信息：")
+        logging.info(f"原始样本数量: {total_original_samples}")
+        logging.info(f"增强后总样本数量: {len(features)}")
+        logging.info(f"新增样本数量: {total_augmented_samples}")
+        logging.info(f"滑动窗口增强样本数量: {augmented_stats['window_augmented']}")
+        logging.info(f"动态长度增强样本数量: {augmented_stats['dynamic_length_augmented']}")
+        logging.info(f"平均每个样本增强数量: {total_augmented_samples/total_original_samples:.2f}")
+        logging.info("="*50)
+                    
     return features
+
+def convert_single_example_to_feature(params, query_tokens, context_tokens, start_position, end_position, tokenizer, example_index, split_index):
+    """转换单个样本为特征
+    """
+    tokens = []
+    segment_ids = []
+    
+    # 添加[CLS]
+    tokens.append("[CLS]")
+    segment_ids.append(0)
+    
+    # 添加query tokens
+    for token in query_tokens:
+        tokens.append(token)
+        segment_ids.append(0)
+    
+    # 添加[SEP]
+    tokens.append("[SEP]")
+    segment_ids.append(0)
+    
+    # 添加context tokens
+    for token in context_tokens:
+        tokens.append(token)
+        segment_ids.append(1)
+    
+    # 添加最后的[SEP]
+    tokens.append("[SEP]")
+    segment_ids.append(1)
+    
+    # 转换为ids
+    input_ids = tokenizer.convert_tokens_to_ids(tokens)
+    input_mask = [1] * len(input_ids)
+    
+    # 补零
+    while len(input_ids) < params.max_seq_length:
+        input_ids.append(0)
+        input_mask.append(0)
+        segment_ids.append(0)
+    
+    # 调整答案位置
+    start_position += len(query_tokens) + 2  # +2是因为[CLS]和第一个[SEP]
+    end_position += len(query_tokens) + 2
+    
+    # 创建特征对象
+    feature = InputFeatures(
+        input_ids=input_ids,
+        input_mask=input_mask,
+        segment_ids=segment_ids,
+        start_position=start_position,
+        end_position=end_position,
+        en_cate=tag2idx[example.en_cate],
+        split_to_original_id=split_index,
+        example_id=example_index
+    )
+    
+    return feature

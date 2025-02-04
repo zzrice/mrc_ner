@@ -49,9 +49,10 @@ class Params:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.n_gpu = torch.cuda.device_count()
 
-        self.train_batch_size = 32  # 训练时的batch size
-        self.val_batch_size = 32  # 验证时的batch size
-        self.test_batch_size = 128  # 测试时的batch size
+        # 减小batch size并增加梯度累积步数
+        self.train_batch_size = 16  # 原来是32
+        self.val_batch_size = 16   # 原来是32
+        self.test_batch_size = 64  # 原来是128
 
         # patience策略
         self.patience = 0.1  # 提升阈值
@@ -69,7 +70,11 @@ class Params:
         # 梯度截断
         self.clip_grad = 1.0  # 梯度截断值
         self.warmup_prop = 0.1  # warmup比例
-        self.gradient_accumulation_steps = 2  # 梯度累积步数
+        self.gradient_accumulation_steps = 4  # 原来是2，增加梯度累积步数
+
+        # 数据增强参数
+        self.augment_ratio = 0.5  # 控制数据增强的比例
+        self.window_stride = 0.8  # 控制滑动窗口的步长
 
     def get(self):
         """以字典形式访问Params实例的所有参数
@@ -279,3 +284,69 @@ def initial_parameter(net, initial_method=None):
             n.apply(weights_init)
     else:
         net.apply(weights_init)
+
+
+class EMA:
+    def __init__(self, model, decay):
+        self.model = model
+        self.decay = decay
+        self.shadow = {}
+        self.backup = {}
+
+    def register(self):
+        for name, param in self.model.named_parameters():
+            if param.requires_grad:
+                self.shadow[name] = param.data.clone()
+
+    def update(self):
+        for name, param in self.model.named_parameters():
+            if param.requires_grad:
+                assert name in self.shadow
+                new_average = (1.0 - self.decay) * param.data + self.decay * self.shadow[name]
+                self.shadow[name] = new_average.clone()
+
+    def apply_shadow(self):
+        for name, param in self.model.named_parameters():
+            if param.requires_grad:
+                assert name in self.shadow
+                self.backup[name] = param.data
+                param.data = self.shadow[name]
+
+    def restore(self):
+        for name, param in self.model.named_parameters():
+            if param.requires_grad:
+                assert name in self.backup
+                param.data = self.backup[name]
+        self.backup = {}
+
+
+class FGM:
+    def __init__(self, model, emb_name='word_embeddings', epsilon=1.0):
+        """初始化
+        Args:
+            model: 模型
+            emb_name: 模型中embedding的参数名
+            epsilon: 扰动大小
+        """
+        self.model = model
+        self.epsilon = epsilon
+        self.emb_name = emb_name
+        self.backup = {}
+
+    def attack(self):
+        """对embedding进行扰动"""
+        for name, param in self.model.named_parameters():
+            if param.requires_grad and self.emb_name in name:
+                self.backup[name] = param.data.clone()
+                norm = torch.norm(param.grad)
+                if norm != 0 and not torch.isnan(norm):
+                    r_at = self.epsilon * param.grad / norm
+                    param.data.add_(r_at)
+
+    def restore(self):
+        """恢复embedding参数"""
+        for name, param in self.model.named_parameters():
+            if param.requires_grad and self.emb_name in name:
+                assert name in self.backup
+                param.data = self.backup[name]
+        self.backup = {}
