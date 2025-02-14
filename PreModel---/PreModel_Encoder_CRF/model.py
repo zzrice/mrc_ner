@@ -177,8 +177,10 @@ class BertForTokenClassification(BertPreTrainedModel):
             self.bert = ElectraModel(config)
         elif self.pre_model_type == 'RoBERTa':
             self.bert = BertModel(config)
+        elif self.pre_model_type == 'BERT':
+            self.bert = BertModel(config)
         else:
-            raise ValueError('Pre-train Model type must be NEZHA or ELECTRA or RoBERTa!')
+            raise ValueError('Pre-train Model type must be NEZHA or ELECTRA or RoBERTa or BERT!')
 
         # 动态权重
         self.fusion_layers = params.fusion_layers
@@ -219,10 +221,10 @@ class BertForTokenClassification(BertPreTrainedModel):
         """
         if self.pre_model_type in ('ELECTRA', 'NEZHA'):
             fusion_idx = 0
-        elif self.pre_model_type == 'RoBERTa':
+        elif self.pre_model_type in ('RoBERTa', 'BERT'):
             fusion_idx = 2
         else:
-            raise ValueError('Pre-train Model type must be NEZHA or ELECTRA or RoBERTa!')
+            raise ValueError('Pre-train Model type must be NEZHA or ELECTRA or RoBERTa or BERT!')
 
         hidden_stack = torch.stack(outputs[fusion_idx][-self.fusion_layers:],
                                    dim=0)  # (num_layers, bs, seq_len, hs)

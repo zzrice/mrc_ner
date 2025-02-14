@@ -36,7 +36,8 @@ STR2IO = {v: k for k, v in IO2STR.items()}
 PreModelDir = {
     "NEZHA": 'nezha-large',
     "RoBERTa": 'medbert-large',
-    "ELECTRA": 'electra-large'
+    "ELECTRA": 'electra-large',
+    "BERT": 'bert-base-chinese'
 }
 
 
@@ -69,9 +70,9 @@ class Params:
 
         # 读取保存的data
         self.data_cache = True
-        self.train_batch_size = 24
-        self.val_batch_size = 24
-        self.test_batch_size = 256
+        self.train_batch_size = 64
+        self.val_batch_size = 64
+        self.test_batch_size = 64
 
         # patience strategy
         # 最小训练次数

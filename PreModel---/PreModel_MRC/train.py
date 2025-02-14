@@ -30,6 +30,8 @@ parser.add_argument('--epoch_num', required=True, type=int,
                     help="指定epoch_num")
 parser.add_argument('--multi_gpu', action='store_true', help="是否多GPU")
 parser.add_argument('--device_id', type=int, default=0)
+parser.add_argument('--sample_ratio', type=float, default=1.0,
+                    help="训练数据采样比例，用于快速验证代码。范围[0-1]，默认使用全部数据")
 
 def train(model, data_iterator, optimizer, scheduler, params):
     """训练模型一个epoch"""
@@ -89,8 +91,11 @@ def train_and_evaluate(model, params, restore_file=None):
     args = parser.parse_args()
 
     dataloader = NERDataLoader(params)
-    train_loader = dataloader.get_dataloader(data_sign='train')
+    train_loader = dataloader.get_dataloader(data_sign='train', sample_ratio=args.sample_ratio)
     val_loader = dataloader.get_dataloader(data_sign='val')
+
+    if args.sample_ratio < 1.0:
+        logging.info(f"使用{args.sample_ratio * 100}%的训练数据进行快速验证")
 
     if restore_file is not None:
         restore_path = os.path.join(params.model_dir, args.restore_file + '.pth.tar')

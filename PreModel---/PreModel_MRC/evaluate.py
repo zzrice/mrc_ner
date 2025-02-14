@@ -8,7 +8,7 @@ import torch
 
 import utils
 from utils import EN2QUERY
-from metrics import classification_report, f1_score, accuracy_score
+from metrics import classification_report, f1_score, accuracy_score, relaxed_f1_score, relaxed_classification_report
 
 
 def pointer2bio(start_labels, end_labels, en_cate):
@@ -127,18 +127,33 @@ def evaluate(args, model, eval_dataloader, params):
             pre_result.append(pre_bio_labels)
             gold_result.append(gold_bio_labels)
 
-    # 计算评估指标
-    f1 = f1_score(y_true=gold_result, y_pred=pre_result)  # 计算F1分数
-    acc = accuracy_score(y_true=gold_result, y_pred=pre_result)  # 计算准确率
+    # 严格匹配评估
+    f1 = f1_score(y_true=gold_result, y_pred=pre_result)
+    acc = accuracy_score(y_true=gold_result, y_pred=pre_result)
+    
+    # 宽松匹配评估
+    relaxed_f1 = relaxed_f1_score(y_true=gold_result, y_pred=pre_result)
 
     # 组织评估结果
-    metrics = {'loss': loss_avg(), 'f1': f1, 'acc': acc}
+    metrics = {
+        'loss': loss_avg(),
+        'f1': f1,
+        'relaxed_f1': relaxed_f1,
+        'acc': acc
+    }
     # 格式化评估指标字符串
     metrics_str = "; ".join("{}: {:05.2f}".format(k, v) for k, v in metrics.items())
     # 记录评估结果
     logging.info("- {} metrics: ".format('Val') + metrics_str)
-    # 生成分类报告
+    
+    # 严格匹配报告
+    logging.info("\n严格匹配评估报告:")
     report = classification_report(y_true=gold_result, y_pred=pre_result)
     logging.info(report)
+    
+    # 宽松匹配报告
+    logging.info("\n宽松匹配评估报告:")
+    relaxed_report = relaxed_classification_report(y_true=gold_result, y_pred=pre_result)
+    logging.info(relaxed_report)
 
     return metrics

@@ -41,7 +41,7 @@ class Params:
         self.root_path = Path(os.path.abspath(os.path.dirname(__file__)))
         self.data_dir = self.root_path / 'data'
         self.params_path = self.root_path / f'experiments/ex{ex_index}'
-        self.bert_model_dir = self.root_path.parent.parent / 'Deberta-Chinese-Large'
+        self.bert_model_dir = self.root_path.parent.parent / 'Bert-Chinese-Large'
         self.model_dir = self.root_path / f'model/ex{ex_index}'
 
         # 读取保存的data

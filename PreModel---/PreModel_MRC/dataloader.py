@@ -108,12 +108,28 @@ class NERDataLoader(object):
         print("="*50)
         return features
 
-    def get_dataloader(self, data_sign="train"):
-        """construct dataloader
-        :param data_sign: 'train', 'val' or 'test'
+    def get_dataloader(self, data_sign="train", sample_ratio=1.0):
+        """构造数据加载器
+        
+        Args:
+            data_sign: str, 'train', 'val' or 'test'
+            sample_ratio: float, 训练数据采样比例，范围[0-1]，仅在data_sign为'train'时有效
+            
+        Returns:
+            dataloader: DataLoader对象
         """
         # InputExamples to InputFeatures
         features = self.get_features(data_sign=data_sign)
+        
+        # 对训练数据进行采样
+        if data_sign == "train" and sample_ratio < 1.0:
+            num_samples = int(len(features) * sample_ratio)
+            # 使用相同的随机种子以保证可重复性
+            torch.manual_seed(self.params.seed)
+            indices = torch.randperm(len(features))[:num_samples]
+            features = [features[idx] for idx in indices]
+            logging.info(f"采样后的训练数据数量: {len(features)}")
+        
         dataset = FeatureDataset(features)
         print(f"{len(features)} {data_sign} data loaded!")
         print("=*=" * 10)

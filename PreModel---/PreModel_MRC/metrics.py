@@ -289,3 +289,153 @@ def classification_report(y_true, y_pred, digits=2, suffix=False):
                              width=width, digits=digits)
 
     return report
+
+
+def has_overlap(span1, span2):
+    """检查两个区间是否满足松弛匹配条件
+    
+    Args:
+        span1: tuple. (start, end)
+        span2: tuple. (start, end)
+        
+    Returns:
+        bool. 是否满足松弛匹配条件
+    """
+    # 根据定义：max(s_i.pos_b, g_j.pos_b) ≤ min(s_i.pos_e, g_j.pos_e)
+    return max(span1[0], span2[0]) <= min(span1[1], span2[1])
+
+
+def relaxed_f1_score(y_true, y_pred, average='micro', digits=2, suffix=False):
+    """计算松弛匹配的F1分数
+    
+    松弛匹配的定义：
+    1. s_i.d = g_j.d (类型相同)
+    2. max(s_i.pos_b, g_j.pos_b) ≤ min(s_i.pos_e, g_j.pos_e) (位置有重叠)
+    3. s_i.c = g_j.c (内容相同)
+    
+    Args:
+        y_true: 2d array. 真实标签序列
+        y_pred: 2d array. 预测标签序列
+        average: str. 平均方式，默认为'micro'
+        digits: int. 结果保留的小数位数
+        suffix: bool. 是否使用后缀模式
+        
+    Returns:
+        score: float. 松弛F1分数
+    """
+    true_entities = get_entities(y_true, suffix)
+    pred_entities = get_entities(y_pred, suffix)
+    
+    # 按类型分组实体
+    true_entities_by_type = defaultdict(list)
+    pred_entities_by_type = defaultdict(list)
+    
+    for entity in true_entities:
+        true_entities_by_type[entity[0]].append((entity[1], entity[2]))
+    
+    for entity in pred_entities:
+        pred_entities_by_type[entity[0]].append((entity[1], entity[2]))
+    
+    nb_correct = 0
+    nb_pred = len(pred_entities)
+    nb_true = len(true_entities)
+    
+    # 对每种实体类型进行匹配
+    for entity_type in true_entities_by_type:
+        true_entities_spans = true_entities_by_type[entity_type]
+        pred_entities_spans = pred_entities_by_type[entity_type]
+        
+        # 对于每个预测的实体，检查是否有满足松弛匹配条件的真实实体
+        for pred_span in pred_entities_spans:
+            for true_span in true_entities_spans:
+                # 检查是否满足松弛匹配条件
+                if has_overlap(pred_span, true_span):
+                    nb_correct += 1
+                    break
+    
+    p = 100 * nb_correct / nb_pred if nb_pred > 0 else 0
+    r = 100 * nb_correct / nb_true if nb_true > 0 else 0
+    score = 2 * p * r / (p + r) if p + r > 0 else 0
+    
+    return score
+
+
+def relaxed_classification_report(y_true, y_pred, digits=2, suffix=False):
+    """生成宽松匹配的分类评估报告
+    
+    Args:
+        y_true: 2d array. 真实标签序列
+        y_pred: 2d array. 预测标签序列
+        digits: int. 结果保留的小数位数
+        suffix: bool. 是否使用后缀模式
+        
+    Returns:
+        report: str. 评估报告
+    """
+    true_entities = set(get_entities(y_true, suffix))
+    pred_entities = set(get_entities(y_pred, suffix))
+
+    name_width = 0
+    d1 = defaultdict(set)
+    d2 = defaultdict(set)
+
+    for e in true_entities:
+        d1[e[0]].add((e[1], e[2]))
+        name_width = max(name_width, len(e[0]))
+
+    for e in pred_entities:
+        d2[e[0]].add((e[1], e[2]))
+
+    last_line_heading = 'avg / total (relaxed)'
+    width = max(name_width, len(last_line_heading), digits)
+
+    headers = ["precision", "recall", "f1-score", "support"]
+    head_fmt = u'{:>{width}s} ' + u' {:>9}' * len(headers)
+    report = head_fmt.format('', *headers, width=width) + '\n\n'
+    row_fmt = u'{:>{width}s} ' + u' {:>9.{digits}f}' * 3 + u' {:>9}\n'
+
+    ps, rs, f1s, s = [], [], [], []
+    for type_name in sorted(d1.keys()):
+        true_entities_spans = d1[type_name]
+        pred_entities_spans = d2[type_name]
+        
+        nb_correct = 0
+        nb_pred = len(pred_entities_spans)
+        nb_true = len(true_entities_spans)
+
+        for pred_span in pred_entities_spans:
+            for true_span in true_entities_spans:
+                if has_overlap(pred_span, true_span):
+                    nb_correct += 1
+                    break
+        
+        p = 100 * nb_correct / nb_pred if nb_pred > 0 else 0
+        r = 100 * nb_correct / nb_true if nb_true > 0 else 0
+        f1 = 2 * p * r / (p + r) if p + r > 0 else 0
+
+        report += row_fmt.format(*[type_name, p, r, f1, nb_true], width=width, digits=digits)
+
+        ps.append(p)
+        rs.append(r)
+        f1s.append(f1)
+        s.append(nb_true)
+
+    report += '\n'
+
+    # 计算平均值
+    if len(s) == 0:
+        avg_p = 0
+        avg_r = 0
+        avg_f1 = 0
+        total_support = 0
+    else:
+        avg_p = np.average(ps, weights=s)
+        avg_r = np.average(rs, weights=s)
+        avg_f1 = np.average(f1s, weights=s)
+        total_support = np.sum(s)
+
+    report += row_fmt.format(last_line_heading,
+                           avg_p, avg_r, avg_f1, total_support,
+                           width=width, digits=digits)
+
+    return report

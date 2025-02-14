@@ -238,8 +238,13 @@ if __name__ == '__main__':
         model = BertForTokenClassification.from_pretrained(config=bert_config,
                                                            pretrained_model_name_or_path=params.bert_model_dir,
                                                            params=params)
+    elif params.pre_model_type == 'BERT':
+        bert_config = BertConfig.from_json_file(os.path.join(params.bert_model_dir, 'config.json'))
+        model = BertForTokenClassification.from_pretrained(config=bert_config,
+                                                           pretrained_model_name_or_path=params.bert_model_dir,
+                                                           params=params)
     else:
-        raise ValueError('Pre-train Model type must be NEZHA or ELECTRA or RoBERTa!')
+        raise ValueError('Pre-train Model type must be NEZHA or ELECTRA or RoBERTa or BERT!')
     logging.info('-done')
 
     # Train and evaluate the model

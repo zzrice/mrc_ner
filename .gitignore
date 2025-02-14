@@ -1,2 +1,6 @@
 nezha-large/
 PreModel---/PreModel_MRC/model/
+bert-base-chinese/
+Deberta-Chinese-Large/
+PreModel---/PreModel_Encoder_CRF/model/
+

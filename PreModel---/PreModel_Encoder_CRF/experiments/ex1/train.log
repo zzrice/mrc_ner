@@ -1,0 +1,352 @@
+2025-02-13 13:51:11,088:INFO: Model type: NEZHA_LSTM_CRF
+2025-02-13 13:51:11,088:INFO: device: cuda
+2025-02-13 13:51:11,088:INFO: Init pre-train model...
+2025-02-13 13:51:13,194:INFO: -done
+2025-02-13 13:51:13,195:INFO: Starting training for 20 epoch(s)
+2025-02-13 13:51:53,961:INFO: Epoch 1/20
+2025-02-13 13:53:44,661:INFO: Model type: NEZHA_LSTM_CRF
+2025-02-13 13:53:44,661:INFO: device: cuda
+2025-02-13 13:53:44,661:INFO: Init pre-train model...
+2025-02-13 13:53:46,084:INFO: -done
+2025-02-13 13:53:46,084:INFO: Starting training for 20 epoch(s)
+2025-02-13 13:53:46,618:INFO: Epoch 1/20
+2025-02-13 13:55:31,825:INFO: Model type: NEZHA_LSTM_CRF
+2025-02-13 13:55:31,825:INFO: device: cuda
+2025-02-13 13:55:31,825:INFO: Init pre-train model...
+2025-02-13 13:55:33,219:INFO: -done
+2025-02-13 13:55:33,219:INFO: Starting training for 20 epoch(s)
+2025-02-13 13:55:33,756:INFO: Epoch 1/20
+2025-02-13 13:57:46,150:INFO: - Val metrics: loss: 30.82; f1: 24.90; accuracy: 00.85
+2025-02-13 13:57:46,191:INFO:              precision    recall  f1-score   support
+
+        POS      36.95     31.15     33.81       918
+        DIS      30.18     18.00     22.55       461
+        MED       0.00      0.00      0.00       218
+        LAB       0.00      0.00      0.00       179
+        SCR       0.00      0.00      0.00        87
+        OPE      14.38     45.10     21.80       102
+
+avg / total      25.09     21.12     22.22      1965
+
+2025-02-13 13:57:49,030:INFO: - Found new best F1
+2025-02-13 13:57:49,030:INFO: Epoch 2/20
+2025-02-13 13:59:49,066:INFO: - Val metrics: loss: 08.36; f1: 68.97; accuracy: 00.94
+2025-02-13 13:59:49,109:INFO:              precision    recall  f1-score   support
+
+        POS      69.37     78.21     73.53       918
+        DIS      61.66     61.39     61.52       461
+        MED      64.07     67.89     65.92       218
+        LAB      57.89     55.31     56.57       179
+        SCR      88.00     75.86     81.48        87
+        OPE      80.00     74.51     77.16       102
+
+avg / total      67.30     70.74     68.86      1965
+
+2025-02-13 13:59:53,752:INFO: - Found new best F1
+2025-02-13 13:59:53,753:INFO: Epoch 3/20
+2025-02-13 14:02:20,971:INFO: - Val metrics: loss: 06.32; f1: 75.45; accuracy: 00.96
+2025-02-13 14:02:21,014:INFO:              precision    recall  f1-score   support
+
+        POS      71.33     77.78     74.41       918
+        DIS      67.11     76.14     71.34       461
+        MED      86.27     80.73     83.41       218
+        LAB      75.44     72.07     73.71       179
+        SCR      74.77     91.95     82.47        87
+        OPE      84.47     85.29     84.88       102
+
+avg / total      73.21     78.22     75.53      1965
+
+2025-02-13 14:02:25,196:INFO: - Found new best F1
+2025-02-13 14:02:25,196:INFO: Epoch 4/20
+2025-02-13 14:04:32,280:INFO: - Val metrics: loss: 04.28; f1: 81.08; accuracy: 00.96
+2025-02-13 14:04:32,323:INFO:              precision    recall  f1-score   support
+
+        POS      83.97     79.30     81.57       918
+        DIS      74.49     78.52     76.45       461
+        MED      89.77     88.53     89.15       218
+        LAB      73.16     77.65     75.34       179
+        SCR      89.89     91.95     90.91        87
+        OPE      78.26     88.24     82.95       102
+
+avg / total      81.37     81.02     81.13      1965
+
+2025-02-13 14:04:36,883:INFO: - Found new best F1
+2025-02-13 14:04:36,883:INFO: Epoch 5/20
+2025-02-13 14:06:59,044:INFO: - Val metrics: loss: 03.87; f1: 83.08; accuracy: 00.97
+2025-02-13 14:06:59,087:INFO:              precision    recall  f1-score   support
+
+        POS      82.99     82.90     82.94       918
+        DIS      73.42     83.30     78.05       461
+        MED      92.99     91.28     92.13       218
+        LAB      79.12     80.45     79.78       179
+        SCR      91.01     93.10     92.05        87
+        OPE      88.89     86.27     87.56       102
+
+avg / total      82.16     84.33     83.17      1965
+
+2025-02-13 14:07:05,276:INFO: - Found new best F1
+2025-02-13 14:07:05,276:INFO: Epoch 6/20
+2025-02-13 14:09:16,798:INFO: - Val metrics: loss: 03.46; f1: 83.67; accuracy: 00.97
+2025-02-13 14:09:16,840:INFO:              precision    recall  f1-score   support
+
+        POS      78.97     82.24     80.58       918
+        DIS      87.21     82.86     84.98       461
+        MED      91.89     93.58     92.73       218
+        LAB      76.17     82.12     79.03       179
+        SCR      94.25     94.25     94.25        87
+        OPE      84.11     88.24     86.12       102
+
+avg / total      83.03     84.48     83.71      1965
+
+2025-02-13 14:09:20,770:INFO: - Found new best F1
+2025-02-13 14:09:20,770:INFO: Epoch 7/20
+2025-02-13 14:11:35,464:INFO: - Val metrics: loss: 03.03; f1: 86.08; accuracy: 00.98
+2025-02-13 14:11:35,508:INFO:              precision    recall  f1-score   support
+
+        POS      84.45     86.38     85.41       918
+        DIS      83.86     85.68     84.76       461
+        MED      94.20     89.45     91.76       218
+        LAB      79.79     83.80     81.74       179
+        SCR      93.26     95.40     94.32        87
+        OPE      88.00     86.27     87.13       102
+
+avg / total      85.54     86.72     86.11      1965
+
+2025-02-13 14:11:39,781:INFO: - Found new best F1
+2025-02-13 14:11:39,781:INFO: Epoch 8/20
+2025-02-13 14:13:38,484:INFO: - Val metrics: loss: 02.99; f1: 86.45; accuracy: 00.97
+2025-02-13 14:13:38,528:INFO:              precision    recall  f1-score   support
+
+        POS      84.23     85.51     84.86       918
+        DIS      82.02     88.07     84.94       461
+        MED      92.83     94.95     93.88       218
+        LAB      83.91     81.56     82.72       179
+        SCR      95.45     96.55     96.00        87
+        OPE      90.20     90.20     90.20       102
+
+avg / total      85.44     87.53     86.46      1965
+
+2025-02-13 14:13:42,140:INFO: - Found new best F1
+2025-02-13 14:13:42,140:INFO: Epoch 9/20
+2025-02-13 14:15:55,691:INFO: - Val metrics: loss: 02.80; f1: 87.19; accuracy: 00.98
+2025-02-13 14:15:55,734:INFO:              precision    recall  f1-score   support
+
+        POS      83.32     86.49     84.87       918
+        DIS      87.99     87.42     87.70       461
+        MED      92.38     94.50     93.42       218
+        LAB      81.48     86.03     83.70       179
+        SCR      95.45     96.55     96.00        87
+        OPE      90.38     92.16     91.26       102
+
+avg / total      86.16     88.30     87.20      1965
+
+2025-02-13 14:16:01,331:INFO: - Found new best F1
+2025-02-13 14:16:01,331:INFO: Epoch 10/20
+2025-02-13 14:18:03,168:INFO: - Val metrics: loss: 02.45; f1: 88.62; accuracy: 00.98
+2025-02-13 14:18:03,210:INFO:              precision    recall  f1-score   support
+
+        POS      86.77     89.32     88.03       918
+        DIS      87.34     88.29     87.81       461
+        MED      95.79     94.04     94.91       218
+        LAB      81.62     84.36     82.97       179
+        SCR      95.35     94.25     94.80        87
+        OPE      89.22     89.22     89.22       102
+
+avg / total      87.94     89.36     88.64      1965
+
+2025-02-13 14:18:07,854:INFO: - Found new best F1
+2025-02-13 14:18:07,854:INFO: Epoch 11/20
+2025-02-13 14:20:10,524:INFO: - Val metrics: loss: 02.44; f1: 88.47; accuracy: 00.98
+2025-02-13 14:20:10,587:INFO:              precision    recall  f1-score   support
+
+        POS      86.99     86.71     86.85       918
+        DIS      88.74     88.94     88.84       461
+        MED      95.41     95.41     95.41       218
+        LAB      82.70     85.47     84.07       179
+        SCR      95.40     95.40     95.40        87
+        OPE      86.79     90.20     88.46       102
+
+avg / total      88.31     88.65     88.48      1965
+
+2025-02-13 14:20:13,235:INFO: Epoch 12/20
+2025-02-13 14:22:22,848:INFO: - Val metrics: loss: 02.52; f1: 87.85; accuracy: 00.98
+2025-02-13 14:22:22,892:INFO:              precision    recall  f1-score   support
+
+        POS      86.93     86.93     86.93       918
+        DIS      84.41     88.07     86.20       461
+        MED      94.55     95.41     94.98       218
+        LAB      80.31     86.59     83.33       179
+        SCR      95.40     95.40     95.40        87
+        OPE      89.42     91.18     90.29       102
+
+avg / total      87.08     88.70     87.87      1965
+
+2025-02-13 14:22:25,472:INFO: Epoch 13/20
+2025-02-13 14:24:33,519:INFO: - Val metrics: loss: 02.29; f1: 89.49; accuracy: 00.98
+2025-02-13 14:24:33,583:INFO:              precision    recall  f1-score   support
+
+        POS      86.70     90.20     88.41       918
+        DIS      89.98     89.59     89.78       461
+        MED      95.85     95.41     95.63       218
+        LAB      82.16     84.92     83.52       179
+        SCR      95.45     96.55     96.00        87
+        OPE      87.85     92.16     89.95       102
+
+avg / total      88.52     90.53     89.51      1965
+
+2025-02-13 14:24:38,390:INFO: - Found new best F1
+2025-02-13 14:24:38,390:INFO: Epoch 14/20
+2025-02-13 14:26:44,820:INFO: - Val metrics: loss: 02.18; f1: 90.07; accuracy: 00.98
+2025-02-13 14:26:44,862:INFO:              precision    recall  f1-score   support
+
+        POS      87.67     90.63     89.13       918
+        DIS      90.97     89.59     90.27       461
+        MED      95.00     95.87     95.43       218
+        LAB      82.35     86.03     84.15       179
+        SCR      95.45     96.55     96.00        87
+        OPE      90.48     93.14     91.79       102
+
+avg / total      89.26     90.94     90.08      1965
+
+2025-02-13 14:26:49,005:INFO: - Found new best F1
+2025-02-13 14:26:49,005:INFO: Epoch 15/20
+2025-02-13 14:28:49,048:INFO: - Val metrics: loss: 02.20; f1: 90.42; accuracy: 00.98
+2025-02-13 14:28:49,092:INFO:              precision    recall  f1-score   support
+
+        POS      88.66     90.31     89.48       918
+        DIS      89.66     90.24     89.95       461
+        MED      95.43     95.87     95.65       218
+        LAB      85.11     89.39     87.19       179
+        SCR      95.45     96.55     96.00        87
+        OPE      88.79     93.14     90.91       102
+
+avg / total      89.63     91.25     90.43      1965
+
+2025-02-13 14:28:53,556:INFO: - Found new best F1
+2025-02-13 14:28:53,556:INFO: Epoch 16/20
+2025-02-13 14:31:06,061:INFO: - Val metrics: loss: 02.19; f1: 90.15; accuracy: 00.98
+2025-02-13 14:31:06,106:INFO:              precision    recall  f1-score   support
+
+        POS      87.43     90.96     89.16       918
+        DIS      89.15     89.15     89.15       461
+        MED      95.00     95.87     95.43       218
+        LAB      85.48     88.83     87.12       179
+        SCR      95.45     96.55     96.00        87
+        OPE      92.23     93.14     92.68       102
+
+avg / total      89.10     91.25     90.16      1965
+
+2025-02-13 14:31:08,613:INFO: Epoch 17/20
+2025-02-13 14:33:07,978:INFO: - Val metrics: loss: 02.15; f1: 89.96; accuracy: 00.98
+2025-02-13 14:33:08,024:INFO:              precision    recall  f1-score   support
+
+        POS      87.06     90.85     88.91       918
+        DIS      89.61     89.80     89.71       461
+        MED      95.43     95.87     95.65       218
+        LAB      83.42     87.15     85.25       179
+        SCR      95.45     96.55     96.00        87
+        OPE      90.48     93.14     91.79       102
+
+avg / total      88.80     91.20     89.98      1965
+
+2025-02-13 14:33:10,630:INFO: Epoch 18/20
+2025-02-13 14:35:22,946:INFO: - Val metrics: loss: 02.13; f1: 90.28; accuracy: 00.98
+2025-02-13 14:35:22,989:INFO:              precision    recall  f1-score   support
+
+        POS      87.55     91.18     89.33       918
+        DIS      90.61     90.02     90.32       461
+        MED      95.43     95.87     95.65       218
+        LAB      83.07     87.71     85.33       179
+        SCR      95.45     96.55     96.00        87
+        OPE      89.62     93.14     91.35       102
+
+avg / total      89.19     91.45     90.30      1965
+
+2025-02-13 14:35:25,529:INFO: Epoch 19/20
+2025-02-13 14:37:24,711:INFO: - Val metrics: loss: 02.11; f1: 90.16; accuracy: 00.98
+2025-02-13 14:37:24,755:INFO:              precision    recall  f1-score   support
+
+        POS      87.46     91.18     89.28       918
+        DIS      89.98     89.59     89.78       461
+        MED      95.43     95.87     95.65       218
+        LAB      83.07     87.71     85.33       179
+        SCR      95.45     96.55     96.00        87
+        OPE      90.48     93.14     91.79       102
+
+avg / total      89.05     91.35     90.17      1965
+
+2025-02-13 14:37:26,769:INFO: Best val f1: 90.42
+2025-02-13 15:21:54,771:INFO: Model type: DeBERTa_LSTM_CRF
+2025-02-13 15:21:54,771:INFO: device: cuda
+2025-02-13 15:21:54,771:INFO: Init pre-train model...
+2025-02-13 15:21:57,837:INFO: -done
+2025-02-13 15:21:57,838:INFO: Starting training for 10 epoch(s)
+2025-02-13 15:22:02,492:INFO: Epoch 1/10
+2025-02-13 15:23:44,067:INFO: Model type: DeBERTa_LSTM_CRF
+2025-02-13 15:23:44,068:INFO: device: cuda
+2025-02-13 15:23:44,068:INFO: Init pre-train model...
+2025-02-13 15:23:47,156:INFO: -done
+2025-02-13 15:23:47,156:INFO: Starting training for 10 epoch(s)
+2025-02-13 15:23:51,116:INFO: Epoch 1/10
+2025-02-13 15:25:11,635:INFO: Model type: DeBERTa_LSTM_CRF
+2025-02-13 15:25:11,635:INFO: device: cuda
+2025-02-13 15:25:11,635:INFO: Init pre-train model...
+2025-02-13 15:25:14,655:INFO: -done
+2025-02-13 15:25:14,655:INFO: Starting training for 10 epoch(s)
+2025-02-13 15:25:29,776:INFO: Model type: DeBERTa_LSTM_CRF
+2025-02-13 15:25:29,777:INFO: device: cuda
+2025-02-13 15:25:29,777:INFO: Init pre-train model...
+2025-02-13 15:25:32,857:INFO: -done
+2025-02-13 15:25:32,857:INFO: Starting training for 10 epoch(s)
+2025-02-13 15:25:36,995:INFO: Epoch 1/10
+2025-02-13 15:26:50,043:INFO: Model type: DeBERTa_LSTM_CRF
+2025-02-13 15:26:50,044:INFO: device: cuda
+2025-02-13 15:26:50,044:INFO: Init pre-train model...
+2025-02-13 15:26:53,063:INFO: -done
+2025-02-13 15:26:53,063:INFO: Starting training for 10 epoch(s)
+2025-02-13 15:26:57,231:INFO: Epoch 1/10
+2025-02-13 15:28:38,599:INFO: Model type: DeBERTa_LSTM_CRF
+2025-02-13 15:28:38,599:INFO: device: cuda
+2025-02-13 15:28:38,599:INFO: Init pre-train model...
+2025-02-13 15:28:41,549:INFO: -done
+2025-02-13 15:28:41,550:INFO: Starting training for 10 epoch(s)
+2025-02-13 15:28:53,270:INFO: Model type: DeBERTa_LSTM_CRF
+2025-02-13 15:28:53,270:INFO: device: cuda
+2025-02-13 15:28:53,270:INFO: Init pre-train model...
+2025-02-13 15:28:56,536:INFO: -done
+2025-02-13 15:28:56,536:INFO: Starting training for 10 epoch(s)
+2025-02-13 15:29:01,279:INFO: Epoch 1/10
+2025-02-13 15:30:31,791:INFO: Model type: DeBERTa_LSTM_CRF
+2025-02-13 15:30:31,792:INFO: device: cuda
+2025-02-13 15:30:31,792:INFO: Init pre-train model...
+2025-02-13 15:30:34,743:INFO: -done
+2025-02-13 15:30:34,743:INFO: Starting training for 10 epoch(s)
+2025-02-13 15:30:39,129:INFO: Epoch 1/10
+2025-02-13 15:32:53,463:INFO: Model type: DeBERTa_LSTM_CRF
+2025-02-13 15:32:53,463:INFO: device: cuda
+2025-02-13 15:32:53,463:INFO: Init pre-train model...
+2025-02-13 15:32:56,722:INFO: -done
+2025-02-13 15:32:56,722:INFO: Starting training for 10 epoch(s)
+2025-02-13 15:33:50,401:INFO: Model type: DeBERTa_LSTM_CRF
+2025-02-13 15:33:50,402:INFO: device: cuda
+2025-02-13 15:33:50,402:INFO: Init pre-train model...
+2025-02-13 15:33:53,889:INFO: -done
+2025-02-13 15:33:53,890:INFO: Starting training for 10 epoch(s)
+2025-02-13 15:33:58,800:INFO: Epoch 1/10
+2025-02-13 15:36:02,368:INFO: Model type: DeBERTa_LSTM_CRF
+2025-02-13 15:36:02,368:INFO: device: cuda
+2025-02-13 15:36:02,369:INFO: Init pre-train model...
+2025-02-13 15:36:05,334:INFO: -done
+2025-02-13 15:36:05,334:INFO: Starting training for 10 epoch(s)
+2025-02-13 15:36:19,699:INFO: Model type: DeBERTa_LSTM_CRF
+2025-02-13 15:36:19,699:INFO: device: cuda
+2025-02-13 15:36:19,699:INFO: Init pre-train model...
+2025-02-13 15:36:22,661:INFO: -done
+2025-02-13 15:36:22,661:INFO: Starting training for 10 epoch(s)
+2025-02-13 15:36:26,639:INFO: Epoch 1/10
+2025-02-13 15:37:20,820:INFO: Model type: DeBERTa_LSTM_CRF
+2025-02-13 15:37:20,821:INFO: device: cuda
+2025-02-13 15:37:20,821:INFO: Init pre-train model...
+2025-02-13 15:37:23,852:INFO: -done
+2025-02-13 15:37:23,852:INFO: Starting training for 10 epoch(s)
+2025-02-13 15:37:27,986:INFO: Epoch 1/10
